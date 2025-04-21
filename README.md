@@ -25,7 +25,7 @@ uv run --env-file .env main.py
 ### Prerequisites
 
 
-- `uv` (https://www.uv.earth)
+- [uv](https://docs.astral.sh/uv/)
 
 ### Installation
 
@@ -50,4 +50,4 @@ uv run --env-file .env main.py
 
 ## Project Authors
 
-- [Michael Meaglia](https://github.com/medaglia)
+- [Michael Medaglia](https://github.com/medaglia)
