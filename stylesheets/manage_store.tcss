@@ -1,0 +1,20 @@
+.screenBox {
+    align: center middle;
+    background: $surface;
+}
+.dialogBox {
+    background: $boost;
+    width: 44;
+    height: 14;
+    padding: 1 2;
+    border: $success tall;
+}
+#progress {
+    margin-top: 2;
+}
+Static {
+    margin-bottom: 1;
+}
+Button {
+    margin-right: 1;
+}
