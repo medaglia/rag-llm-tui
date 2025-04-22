@@ -3,9 +3,9 @@ import itertools
 from time import time
 
 import chromadb
+from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_community.graph_vectorstores.base import GraphVectorStoreRetriever
-from langchain_community.vectorstores import Chroma
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 

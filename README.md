@@ -36,7 +36,7 @@ uv run --env-file .env main.py
 
 ### Prerequisites
 
-
+- You'll need to either have an API key for your language model, or use a local model.
 - [uv](https://docs.astral.sh/uv/)
 
 ### Installation
