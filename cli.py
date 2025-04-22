@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import Awaitable, Callable
 from functools import partial
 from typing import Iterable
@@ -9,7 +8,7 @@ from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, Input, Markdown, ProgressBar, Static
 
-from utils import get_logger
+from utils import History, get_logger
 
 logger = get_logger(__name__)
 
@@ -84,6 +83,9 @@ class Chat(Screen):
 
     AUTO_FOCUS = "Input"
     CSS_PATH = "stylesheets/chat.tcss"
+    BINDINGS = [("up", "history_up", "Get last"), ("down", "history_down", "Get next")]
+
+    history = History(100)
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -96,12 +98,39 @@ class Chat(Screen):
     async def on_input(self, event: Input.Submitted) -> None:
         """When the user hits return."""
         chat_view = self.query_one("#chat-view")
+        if not event.value.strip():
+            return
+
         event.input.clear()
         await chat_view.mount(Prompt(event.value))
         await chat_view.mount(response := Response("..."))
         response.anchor()
-
+        self.history.append(event.value)
         self.send_prompt(event.value, response)
+
+    def action_history_up(self) -> None:
+        """Get the last message from history and insert it into the input."""
+
+        text = self.history.prev()
+        if text is None:
+            return
+
+        input = self.query_one(Input)
+        input.clear()
+        input.insert(text, 0)
+
+    def action_history_down(self) -> None:
+        """Get the next message from history and insert it into the input."""
+
+        text = self.history.next()
+
+        # If we can't go forward any more, insert an empty string
+        if text is None:
+            text = ""
+
+        input = self.query_one(Input)
+        input.clear()
+        input.insert(text, 0)
 
     @work(thread=True)
     def send_prompt(self, prompt: str, response: Response) -> None:

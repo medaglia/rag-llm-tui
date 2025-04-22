@@ -1,8 +1,9 @@
 Prompt {
-    background: $primary 10%;
+    border: wide $panel;
+    background: $panel 50%;
     color: $text;
     margin: 1;
-    margin-right: 8;
+    margin-left: 12;
     padding: 1 2 0 2;
 }
 

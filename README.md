@@ -2,21 +2,33 @@
 
 ## Table of Contents
 
-- [Table of Contents](#table-of-contents)
-- [Project Overview](#project-overview)
-- [Project Setup](#project-setup)
-- [Project Structure](#project-structure)
-- [Project Dependencies](#project-dependencies)
-- [Project Configuration](#project-configuration)
-- [Project Usage](#project-usage)
-- [Project License](#project-license)
-- [Project Authors](#project-authors)
+- [Overview](#overview)
+- [Setup](#setup)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Authors](#authors)
 
-## Project Overview
+## Overview
 
-This project is a Python-based application that provides a terminal user interface (TUI) for interacting with a language model.
+This project is a terminal-based AI assistant for helping with TTRPGs (Table Top Role-Playing Games). 
 
-## Project Setup
+You can use it to
+ - ask questions about your game rules, and get answers from the language model.
+ - roll dice and get random numbers.
+
+It's a terminal user interface (TUI) to a RAG Chatbot that will load your game rules into a vector database and 
+provide a chat interface to the language model of your choice. 
+
+This project is very much a work in progress.
+
+### Built with
+
+- [Textual](https://textual.textualize.io/)
+- [LangChain](https://www.langchain.com/)
+- [ChromaDB](https://www.trychroma.com/)
+- [D7](https://github.com/NunoCastanho/d7) (for dice rolling)
+
+## Setup
 
 ```
 uv run --env-file .env main.py
@@ -48,6 +60,12 @@ uv run --env-file .env main.py
    uv run --env-file .env main.py
    ```
 
-## Project Authors
+## Usage
+
+You can interact with the language model by typing your query in the terminal.
+
+Once you have loaded your PDFs, you can ask questions about them.
+
+## Authors
 
 - [Michael Medaglia](https://github.com/medaglia)
