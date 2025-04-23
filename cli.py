@@ -133,10 +133,10 @@ class Chat(Screen):
         input.insert(text, 0)
 
     @work(thread=True)
-    def send_prompt(self, prompt: str, response: Response) -> None:
+    async def send_prompt(self, prompt: str, response: Response) -> None:
         """Call the parent's prompt function so that it can update the thread."""
         update_func = partial(self.app.call_from_thread, response.update)
-        self.app.prompt_func(prompt, update_func)
+        await self.app.prompt_func(prompt, update_func)
 
 
 class CliApp(App):

@@ -77,7 +77,7 @@ class DiceTool(BaseTool):
     ) -> str:
         return self.format(Roller(text).roll())
 
-    def _arun(
+    async def _arun(
         self, text: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         return self._run(text, run_manager=run_manager.get_sync())

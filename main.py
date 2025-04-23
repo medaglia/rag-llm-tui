@@ -34,9 +34,9 @@ async def on_mount(_app) -> None:
     logger.debug("\n" + llm_agent.graph().draw_mermaid())
 
 
-def on_prompt(text: str, update_func) -> None:
+async def on_prompt(text: str, update_func) -> None:
     """Takes user input and streams the response using the update function"""
-    llm_agent.stream_response(text, update_func)
+    await llm_agent.stream_response(text, update_func)
 
 
 async def load_rag(update_func) -> None:
@@ -51,6 +51,7 @@ async def reset_rag() -> None:
 
 async def main() -> None:
     validate_env()
+    await llm_agent.initialize_workflow()
 
     # check for rag initialization and prompt user
     initial_screen = SCREEN_MANAGE_STORE if store.get_count() == 0 else SCREEN_CHAT

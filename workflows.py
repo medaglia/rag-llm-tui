@@ -23,6 +23,11 @@ logger = get_logger(__name__)
 
 TEMPERATURE = 0.0
 
+AGENT_NODE = "agent"
+TOOLS_NODE = "tools"
+GENERATOR_NODE = "generator"
+DICE_NODE = "dice"
+
 
 class DiceMessage(BaseMessage):
     """Dice message"""
@@ -37,6 +42,8 @@ class LLM(metaclass=Singleton):
     SYSTEM_MESSAGE = "You are a helpful assistant tasked with looking up game rules and rolling dice."
     RETRIEVER_MESSAGE = "Search and return information about the role playing game."
 
+    agent: StateGraph
+
     def __init__(self, config: Config, store: RagStore, *args, **kwargs):
         """Initialize the LLM"""
         super().__init__(*args, **kwargs)
@@ -45,48 +52,46 @@ class LLM(metaclass=Singleton):
         retriever_tool: Tool = create_retriever_tool(
             store.retriever, "retrieve_rules", self.RETRIEVER_MESSAGE
         )
-        tools: list[Tool] = [retriever_tool, DiceTool()]
-
+        self.tools: list[Tool] = [retriever_tool, DiceTool()]
         self.model = init_chat_model(
             config.chat_model,
             model_provider=config.chat_provider,
             api_key=config.chat_api_key,
             streaming=True,
             temperature=TEMPERATURE,
-        ).bind_tools(tools)
+        ).bind_tools(self.tools)
 
-        # Create the agent
-        self.agent = self.create_agent(tools).compile()
-
-    def create_agent(self, tools: list[Tool]) -> StateGraph:
-        """Create the agent"""
+    async def initialize_workflow(self) -> None:
+        """Initialize the graph workflow"""
         workflow = StateGraph(MessagesState)
-        workflow.add_node("agent", self.agent_node)
-        workflow.add_node("tools", ToolNode(tools))
-        workflow.add_node("generate", self.generate_node)
-        workflow.add_node("dice", self.dice_node)
-        workflow.add_edge(START, "agent")
+        workflow.add_node(AGENT_NODE, self.agent_node)
+        workflow.add_node(TOOLS_NODE, ToolNode(self.tools))
+        workflow.add_node(GENERATOR_NODE, self.generator_node)
+        workflow.add_node(DICE_NODE, self.dice_node)
+
+        workflow.add_edge(START, AGENT_NODE)
         workflow.add_conditional_edges(
-            "agent",
+            AGENT_NODE,
             tools_condition,
             {
-                "tools": "tools",
-                END: END,
+                TOOLS_NODE: TOOLS_NODE,
+                END: END,  # If no tools are called, end the workflow
             },
         )
-        # workflow.add_edge("tools", "generate")
         workflow.add_conditional_edges(
-            "tools",
+            TOOLS_NODE,
             self.tools_response_condition,
             {
-                "generate": "generate",
-                "dice": "dice",
+                GENERATOR_NODE: GENERATOR_NODE,
+                DICE_NODE: DICE_NODE,
             },
         )
-        workflow.add_edge("generate", END)
-        return workflow
+        workflow.add_edge(GENERATOR_NODE, END)
+        self.agent = workflow.compile()
 
-    def generate_node(self, state: MessagesState) -> dict[str, list[dict[str, str]]]:
+    async def generator_node(
+        self, state: MessagesState
+    ) -> dict[str, list[dict[str, str]]]:
         """Generate a response based on the original prompt and the retrieved documents"""
 
         prompt = hub.pull("rlm/rag-prompt")
@@ -105,28 +110,17 @@ class LLM(metaclass=Singleton):
 
         rag_chain = prompt | model
 
-        # TODO: make async
-        response = rag_chain.invoke({"context": docs, "question": question})
+        response = await rag_chain.ainvoke({"context": docs, "question": question})
 
         logger.debug(f"Response: {response}")
         return {"messages": [response]}
 
-    def agent_node(self, state: MessagesState):
-        """LLM decides whether to call a tool or not"""
-
-        # TODO: make async
-        return {
-            "messages": [
-                self.model.invoke(
-                    [SystemMessage(content=self.SYSTEM_MESSAGE)] + state["messages"]
-                )
-            ]
-        }
-
-    def dice_node(self, state: MessagesState):
-        """Create a dice message from the tool response"""
-        dice_message = DiceMessage(content=state["messages"][-1].content)
-        return {"messages": state["messages"] + [dice_message]}
+    async def agent_node(self, state: MessagesState):
+        """Decides whether to call a tool or not"""
+        response = await self.model.ainvoke(
+            [SystemMessage(content=self.SYSTEM_MESSAGE)] + state["messages"]
+        )
+        return {"messages": [response]}
 
     def tools_response_condition(self, state: MessagesState):
         """Route the tool response to the appropriate node"""
@@ -138,33 +132,38 @@ class LLM(metaclass=Singleton):
             isinstance(last_message, ToolMessage)
             and last_message.name == DICE_TOOL_NAME
         ):
-            return "dice"
+            return DICE_NODE
 
-        return "generate"
+        return GENERATOR_NODE
+
+    async def dice_node(self, state: MessagesState):
+        """Create a dice message from the tool response"""
+        dice_message = DiceMessage(content=state["messages"][-1].content)
+        return {"messages": state["messages"] + [dice_message]}
 
     def graph(self) -> StateGraph:
         """Get the graph of the workflow"""
         return self.agent.get_graph()
 
-    def stream_response(
+    async def stream_response(
         self, user_input: str, update_func: Callable[[str], None]
     ) -> None:
         """Takes user input and streams the response using the update function"""
         response = ""
-        for event in self.agent.stream(
+        async for event in self.agent.astream_events(
             {"messages": [HumanMessage(content=user_input)]}
         ):
-            logger.debug(f"Event: {event}")
-            for value in event.values():
-                if "messages" not in value or not value["messages"]:
-                    continue
-                last_message = value["messages"][-1]
+            if event["event"] != "on_chain_end" or event["name"] != "LangGraph":
+                continue
 
-                # If the last message is an AIMessage, add it to the response
-                if isinstance(last_message, AIMessage):
-                    response += last_message.content
-                    update_func(response)
+            messages = event["data"]["output"]["messages"]
 
-                elif isinstance(last_message, DiceMessage):
-                    response += last_message.content
-                    update_func(response)
+            logger.debug(f"Event Output Messages: {messages}")
+
+            # Get the last message
+            last_message = messages[-1]
+
+            # If the last message is an AIMessage or DiceMessage, add it to the response
+            if isinstance(last_message, (AIMessage, DiceMessage)):
+                response += last_message.content
+                update_func(response)
