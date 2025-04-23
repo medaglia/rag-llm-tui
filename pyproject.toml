@@ -22,5 +22,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "grandalf>=0.8",
+    "pytest>=8.3.5",
     "textual-dev>=1.7.0",
 ]

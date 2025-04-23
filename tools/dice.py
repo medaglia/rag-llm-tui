@@ -91,6 +91,6 @@ class DiceTool(BaseTool):
             "(∩^o^)⊃━ ✧.*･    {text}",
             "(๑╹ڡ╹)╭━✧°˖    {text}",
             "༼ ಠДಠ ༽╭o͡͡͡━ ✧.*･｡ﾟ    {text}",
-            "( ͝ ° ͜ʖ͡° )⊃━ .*･｡ﾟ    {text}",
+            "(⊃ ° ͜ʖ͡° )⊃━ .*･｡ﾟ    {text}",
         ]
         return "Dice Roll!  \n\n" + random.choice(formats).format(text=text)

@@ -3,9 +3,8 @@ import asyncio
 from pydantic import ValidationError
 
 from cli import SCREEN_CHAT, SCREEN_MANAGE_STORE, CliApp
-from config import Config
 from rag_store import RagStore
-from utils import get_logger
+from utils import Config, get_logger
 from workflows import LLM
 
 logger = get_logger(__name__)

@@ -14,10 +14,9 @@ from langchain_core.tools.retriever import create_retriever_tool
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
-from config import Config
-from dice_tool import DICE_TOOL_NAME, DiceTool
 from rag_store import RagStore
-from utils import Singleton, get_logger
+from tools.dice import DICE_TOOL_NAME, DiceTool
+from utils import Config, Singleton, get_logger
 
 logger = get_logger(__name__)
 

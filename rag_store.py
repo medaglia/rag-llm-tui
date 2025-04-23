@@ -9,8 +9,7 @@ from langchain_community.graph_vectorstores.base import GraphVectorStoreRetrieve
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from config import Config
-from utils import Singleton, get_logger
+from utils import Config, Singleton, get_logger
 
 logger = get_logger(__name__)
 
