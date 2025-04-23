@@ -1,5 +1,6 @@
 import asyncio
-import os
+
+from pydantic import ValidationError
 
 from cli import SCREEN_CHAT, SCREEN_MANAGE_STORE, CliApp
 from config import Config
@@ -9,22 +10,12 @@ from workflows import LLM
 
 logger = get_logger(__name__)
 
-REQUIRED_ENV_VARS = [
-    "OPENAI_API_KEY",
-    "CHAT_MODEL_PROVIDER",
-    "CHAT_MODEL",
-    "PDF_DIR",
-    "EMBEDDING_MODEL",
-]
+try:
+    config = Config()
+except ValidationError as e:
+    print(f"Failed to load config. {e}")
+    exit(1)
 
-
-def validate_env() -> None:
-    missing = [v for v in REQUIRED_ENV_VARS if not os.getenv(v)]
-    if missing:
-        raise Exception(f"Missing environmental variable(s) {missing}")
-
-
-config = Config()
 store = RagStore(config)
 llm_agent = LLM(config, store)
 
@@ -50,7 +41,6 @@ async def reset_rag() -> None:
 
 
 async def main() -> None:
-    validate_env()
     await llm_agent.initialize_workflow()
 
     # check for rag initialization and prompt user
