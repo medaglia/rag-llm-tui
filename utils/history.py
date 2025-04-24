@@ -3,7 +3,7 @@ class History:
 
     def __init__(self, size: int = 100):
         self.size = size
-        self.history = []
+        self.history: list[str] = []
         self.index = 0
 
     def append(self, message: str):

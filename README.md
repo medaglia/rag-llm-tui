@@ -30,7 +30,7 @@ This project is very much a work in progress.
 
 ## Setup
 
-```
+```bash
 uv run --env-file .env main.py
 ```
 
@@ -42,29 +42,39 @@ uv run --env-file .env main.py
 ### Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/username/rag-llm-tui.git
-   cd rag-llm-tui
-   ```
+
+```bash
+git clone https://github.com/username/rag-llm-tui.git
+cd rag-llm-tui
+```
 
 2. Copy the example environment file and fill in the values for the environment variables.
-   ```bash
-   cp env.example .env
-   ```
+
+```bash
+cp env.example .env
+```
 
 3. Create a directory for PDFs, and add this path to the `PDF_DIR` environment variable.
 
 4. Install and run with uv
 
-   ```bash
-   uv run --env-file .env main.py
-   ```
+```bash
+uv run main.py
+```
 
 ## Usage
 
 You can interact with the language model by typing your query in the terminal.
 
 Once you have loaded your PDFs, you can ask questions about them.
+
+## Development
+
+Running tests:
+
+```bash
+uv run pytest tests
+```
 
 ## Authors
 

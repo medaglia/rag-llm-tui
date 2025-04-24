@@ -39,20 +39,18 @@ class Roller:
         self.text = text.replace(" ", "")
         self.expression = dice_expression.DiceExpression(self.text)
 
-    def roll(self) -> int:
-        """Roll the dice"""
-        result = self.expression.roll()
-        logger.debug(f"Rolling {self.text} = {result}")
-        logger.debug(self.expression.dice)
-        return result
-
     def __str__(self) -> str:
-        """Return the dice expression"""
+        """Return the dice expression as a string"""
         return self.text
 
     def __repr__(self) -> str:
         """Return the dice expression in JSON format"""
         return self.expression.toJSON()
+
+    def roll(self) -> int:
+        """Roll the dice"""
+        result = self.expression.roll()
+        return result
 
 
 class DiceToolInput(BaseModel):
@@ -75,14 +73,14 @@ class DiceTool(BaseTool):
     def _run(
         self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        return self.format(Roller(text).roll())
+        return self.formatted(Roller(text).roll())
 
     async def _arun(
         self, text: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         return self._run(text, run_manager=run_manager.get_sync())
 
-    def format(self, text: str) -> str:
+    def formatted(self, text: str) -> str:
         formats = [
             "(╯°□°）╯ .✧∘˳°     {text}",
             "(੭˃ᴗ˂)⊃━ .✧.*･    {text}",
