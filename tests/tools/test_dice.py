@@ -47,3 +47,7 @@ class TestDiceTool:
     async def test_arun(self, mock_formatted, mock_roll):
         await DiceTool()._arun("1d6", MagicMock())
         mock_formatted.assert_called_once_with(5)
+
+    def test_formatted(self):
+        tool = DiceTool()
+        assert "5" in tool.formatted(5)

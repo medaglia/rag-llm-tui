@@ -23,3 +23,7 @@ pdfs/
 
 # Logs
 logs/
+
+# Coverage
+.coverage
+

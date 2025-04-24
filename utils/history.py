@@ -1,7 +1,10 @@
+MAX_HISTORY_SIZE = 100
+
+
 class History:
     """Maintain a history of messages and allow the user to page through it."""
 
-    def __init__(self, size: int = 100):
+    def __init__(self, size: int = MAX_HISTORY_SIZE):
         self.size = size
         self.history: list[str] = []
         self.index = 0
