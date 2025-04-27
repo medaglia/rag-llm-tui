@@ -1,5 +1,9 @@
 # README
 
+A terminal-based AI assistant for helping with TTRPGs (Table Top Role-Playing Games).
+
+![Screenshot](docs/screenshot.svg)
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -10,28 +14,26 @@
 
 ## Overview
 
-This project is a terminal-based AI assistant for helping with TTRPGs (Table Top Role-Playing Games). 
+This project is a work in progress and largely experimental. 
 
-You can use it to
- - ask questions about your game rules, and get answers from the language model.
+You can use the interface to:
+ - ask questions about game rules, and get answers from the language model.
  - roll dice and get random numbers.
 
 It's a terminal user interface (TUI) to a RAG Chatbot that will load your game rules into a vector database and 
 provide a chat interface to the language model of your choice. 
 
-This project is very much a work in progress.
-
 ### Built with
 
-- [Textual](https://textual.textualize.io/)
-- [LangChain](https://www.langchain.com/)
-- [ChromaDB](https://www.trychroma.com/)
-- [D7](https://github.com/NunoCastanho/d7) (for dice rolling)
+- [Textual](https://textual.textualize.io/) -TUI framework
+- [LangGraph](https://www.langchain.com/) - Framework for LLM workflows
+- [ChromaDB](https://www.trychroma.com/) - Vector database
+- [D7](https://github.com/NunoCastanho/d7) - Dice rolling
 
 ## Setup
 
 ```bash
-uv run --env-file .env main.py
+uv run main.py
 ```
 
 ### Prerequisites
@@ -51,7 +53,7 @@ cd rag-llm-tui
 2. Copy the example environment file and fill in the values for the environment variables.
 
 ```bash
-cp env.example .env
+cp .env.test .env
 ```
 
 3. Create a directory for PDFs, and add this path to the `PDF_DIR` environment variable.
