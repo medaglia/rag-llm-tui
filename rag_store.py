@@ -5,7 +5,7 @@ from time import time
 import chromadb
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyMuPDFLoader
-from langchain_community.graph_vectorstores.base import GraphVectorStoreRetriever
+from langchain_core.vectorstores import VectorStoreRetriever
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -54,7 +54,7 @@ class RagStore(metaclass=Singleton):
             client=client,
             collection_metadata={"source": "pdfs"},
         )
-        self.retriever: GraphVectorStoreRetriever = self.store.as_retriever()
+        self.retriever: VectorStoreRetriever = self.store.as_retriever()
 
     async def reset(self):
         """Reset the RAG store"""
@@ -68,15 +68,13 @@ class RagStore(metaclass=Singleton):
     async def load(self, update_func):
         """Load PDFs to the store from a directory"""
         file_paths = glob.glob(self.pdf_dir + "/**/*.pdf", recursive=True)
-        kwargs = dict(mode="page")
-        loaders = [PyMuPDFLoader(file_path, **kwargs) for file_path in file_paths]
+        loaders = [PyMuPDFLoader(file_path, mode="page") for file_path in file_paths]
 
         pages = []
         for loader in loaders:
             logger.debug(f"Loading: {loader.file_path}")
 
             async for page in loader.alazy_load():
-                logger.debug(f"Loading page: {page}")
                 pages.append(page)
 
         await self.load_pages(pages, update_func)
@@ -95,8 +93,8 @@ class RagStore(metaclass=Singleton):
         # process doc splits in batches
         for batch in itertools.batched(doc_splits, TEXT_SPLITTER_BATCH_SIZE):
             await self.store.aadd_documents(batch)
-
-            logger.debug(f"Loaded {len(batch)} pages. {time() - start:.2f} seconds")
             completed += len(batch)
-            logger.debug(f"{completed}/{total} pages loaded")
+            logger.debug(
+                f"{completed}/{total} pages loaded in {time() - start:.2f} seconds"
+            )
             update_func(advance=len(batch))
