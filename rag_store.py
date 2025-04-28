@@ -1,13 +1,16 @@
 import glob
 import itertools
 from time import time
+from typing import Iterable
 
 import chromadb
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyMuPDFLoader
+from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStoreRetriever
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters.base import TextSplitter
 
 from utils import Config, Singleton, get_logger
 
@@ -17,12 +20,12 @@ CHROMA_PATH = ".chroma"
 TEXT_SPLITTER_BATCH_SIZE = 50  # Number of documents to split at a time
 
 
-def get_embedder(config):
+def get_embedder(config) -> OllamaEmbeddings:
     """Get embeddings for PDFs"""
     return OllamaEmbeddings(model=config.embedding_model)
 
 
-def get_splitter(embedding_function):
+def get_splitter() -> TextSplitter:
     """Get text splitter for PDFs"""
     return RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
 
@@ -36,30 +39,29 @@ def get_client() -> chromadb.Client:
 class RagStore(metaclass=Singleton):
     """RAG store for PDFs"""
 
-    def __init__(self, config: Config, *args, **kwargs):
+    def __init__(self, config: Config, client: chromadb.Client, *args, **kwargs):
         """Initialize the RAG store"""
         super().__init__(*args, **kwargs)
 
         self.config = config
         self.pdf_dir = config.pdf_dir
+        self.client = client
         self.create_store()
 
     def create_store(self):
         """Create a new store"""
-        client: chromadb.Client = get_client()
         logger.debug(f"Creating store: {self.config.chroma_collection_name}")
         self.store = Chroma(
             collection_name=self.config.chroma_collection_name,
             embedding_function=get_embedder(self.config),
-            client=client,
+            client=self.client,
             collection_metadata={"source": "pdfs"},
         )
         self.retriever: VectorStoreRetriever = self.store.as_retriever()
 
     async def reset(self):
         """Reset the RAG store"""
-        client = get_client()
-        client.delete_collection(name=self.config.chroma_collection_name)
+        self.client.delete_collection(name=self.config.chroma_collection_name)
         self.create_store()
 
     def get_count(self) -> int:
@@ -79,10 +81,10 @@ class RagStore(metaclass=Singleton):
 
         await self.load_pages(pages, update_func)
 
-    async def load_pages(self, pages, update_func):
+    async def load_pages(self, pages: Iterable[Document], update_func):
         """Load pages into the store"""
 
-        text_splitter = get_splitter(get_embedder(self.config))
+        text_splitter = get_splitter()
         doc_splits = text_splitter.split_documents(pages)
 
         start = time()

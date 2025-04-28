@@ -2,8 +2,8 @@ import asyncio
 
 from pydantic import ValidationError
 
+import rag_store
 from cli import SCREEN_CHAT, SCREEN_MANAGE_STORE, CliApp
-from rag_store import RagStore
 from utils import Config, get_logger
 from workflows import LLM
 
@@ -15,7 +15,7 @@ except ValidationError as e:
     print(f"Failed to load config. {e}")
     exit(1)
 
-store = RagStore(config)
+store = rag_store.RagStore(config, rag_store.get_client())
 llm_agent = LLM(config, store)
 
 
