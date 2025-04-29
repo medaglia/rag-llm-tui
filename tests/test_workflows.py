@@ -1,22 +1,36 @@
-from typing import Any, Callable, Dict, Optional, Sequence, Union
-from unittest.mock import Mock, patch
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Sequence, Union
+from unittest.mock import Mock, call, patch
 
 import pytest
 from langchain_core.language_models.base import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
-from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    ToolMessage,
+)
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.graph import MessagesState
 from langgraph.graph.state import CompiledStateGraph
 
 from tools.dice import DICE_TOOL_NAME
-from workflows import DICE_NODE, GENERATOR_NODE, LLM
+from workflows import DICE_NODE, GENERATOR_NODE, LLM, DiceMessage
 
 fake_responses = [
-    "response_1",
-    "response_2",
-    "response_3",
+    "response 1",
+    "response 2",
+    "response 3",
+]
+
+fake_stream_events = [
+    HumanMessage(content="This is a human response"),
+    AIMessage(content="This "),
+    AIMessage(content="is "),
+    AIMessage(content="an "),
+    AIMessage(content="AI "),
+    AIMessage(content="response"),
 ]
 
 
@@ -29,6 +43,17 @@ class FakeModel(FakeListChatModel):
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self
+
+
+async def fake_astream_events(
+    messages: List[BaseMessage],
+) -> AsyncGenerator[Dict[str, Any], None]:
+    for event in fake_stream_events:
+        yield {
+            "event": "on_chain_end",
+            "name": "LangGraph",
+            "data": {"output": {"messages": [event]}},
+        }
 
 
 initial_state = MessagesState(messages=[HumanMessage(content="test")])
@@ -92,11 +117,19 @@ class TestLLM:
         response = llm.tools_response_condition(state)
         assert response == DICE_NODE
 
-    # @pytest.mark.asyncio
-    # @patch("workflows.init_chat_model")
-    # async def test_stream_response(self, init_chat_model, config, rag_store):
-    #     init_chat_model.return_value = FakeModel(responses=fake_responses)
-    #     llm = LLM(config, rag_store)
-    #     await llm.initialize_workflow()
-    #     update_func = Mock()
-    #     response = await llm.stream_response("test", update_func)
+    @pytest.mark.asyncio
+    @patch("workflows.init_chat_model")
+    async def test_stream_response(self, init_chat_model, config, rag_store):
+        init_chat_model.return_value = FakeModel(responses=fake_responses)
+        llm = LLM(config, rag_store)
+        await llm.initialize_workflow()
+        update_func = Mock()
+        llm.agent.astream_events = fake_astream_events
+        await llm.stream_response("test", update_func)
+        assert update_func.call_args_list == [
+            call("This "),
+            call("This is "),
+            call("This is an "),
+            call("This is an AI "),
+            call("This is an AI response"),
+        ]
